@@ -1,0 +1,44 @@
+# ============================================================
+# Enterprise Document Q&A System — Application Configuration
+# ============================================================
+# This file is loaded by Spring Boot automatically on startup.
+# Properties here can be injected into any Spring bean using @Value("${property.name}").
+
+spring:
+  application:
+    # The name of this Spring Boot application (used in logs and monitoring)
+    name: enterprise-doc-qa
+
+  servlet:
+    multipart:
+      # Maximum size of a single uploaded file (PDF).
+      # Set to 50MB to support large research papers and enterprise documents.
+      # Increase this if users need to upload larger PDFs.
+      max-file-size: 50MB
+
+      # Maximum total size of a multipart HTTP request (file + other form fields).
+      # Should be >= max-file-size.
+      max-request-size: 50MB
+
+# ============================================================
+# Gemini LLM Configuration
+# ============================================================
+# These properties are injected into RagConfiguration.java via @Value annotations:
+#   @Value("${gemini.api-key}") → String apiKey
+#   @Value("${gemini.model}")   → String modelName
+
+gemini:
+  # Google AI Studio API Key (get yours at https://aistudio.google.com/app/apikey)
+  # SECURITY NOTE: In production, use environment variables or a secrets manager
+  # (e.g., AWS Secrets Manager, HashiCorp Vault) instead of hardcoding here.
+  api-key: YOUR_GOOGLE_AI_STUDIO_API_KEY_HERE   # Get free key at: https://aistudio.google.com/app/apikey
+
+  # Gemini model version to use for generating answers.
+  #
+  # Model selection history during debugging:
+  #   gemini-1.5-flash      → 404 Not Found (deprecated for new API keys)
+  #   gemini-2.5-flash      → 404 Not Found (deprecated)
+  #   gemini-3.5-flash      → 503 Service Unavailable (high demand)
+  #   gemini-3.8-flash      → 503 / hanging (overloaded)
+  #   gemini-3.5-flash-lite → ✅ Works! Fast, cost-effective, accurate answers
+  model: gemini-3.5-flash-lite

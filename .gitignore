@@ -1,0 +1,25 @@
+# Maven build output — never commit compiled files
+target/
+*.class
+
+# Maven wrapper (keep the properties, ignore the jar)
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# macOS system files
+.DS_Store
+
+# Spring Boot log files
+*.log
+logs/
+
+# Do not commit the real application.yml with API keys in production.
+# Use environment variables or a secrets manager instead.
+# Uncomment the line below if you move to environment-variable-based config:
+# application.yml

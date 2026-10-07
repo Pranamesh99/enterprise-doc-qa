@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Document Q&A</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-base: #0f172a;
+            --bg-panel: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top right, #1e1b4b, var(--bg-base) 60%);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* Abstract Background Elements */
+        .bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+        }
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(99, 102, 241, 0.15);
+            top: -100px;
+            left: -100px;
+        }
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: rgba(236, 72, 153, 0.15);
+            bottom: -50px;
+            right: -50px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 40px 20px;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(135deg, #fff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-top: 8px;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .panel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .panel h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel h3 span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .panel p {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Form Controls */
+        .file-upload-wrapper {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .file-upload-input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px dashed var(--border-light);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-upload-input:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .file-upload-input::file-selector-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            margin-right: 16px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .file-upload-input::file-selector-button:hover {
+            background: var(--primary-hover);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 16px;
+            color: var(--text-main);
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="text"]::placeholder {
+            color: #64748b;
+        }
+
+        button.btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 28px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        }
+
+        button.btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.5);
+        }
+
+        button.btn-primary:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px -1px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Status & Response areas */
+        .status {
+            margin-top: 16px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .status.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .status-success { color: var(--success); }
+        .status-warning { color: var(--warning); }
+        .status-error { color: var(--error); }
+
+        #chat-response {
+            margin-top: 24px;
+            padding: 24px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            line-height: 1.6;
+            font-size: 1rem;
+            color: #e2e8f0;
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+            position: relative;
+        }
+
+        #chat-response::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 24px;
+            bottom: 24px;
+            width: 4px;
+            background: var(--primary);
+            border-radius: 0 4px 4px 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .thinking-dots::after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { color: rgba(255,255,255,0); text-shadow: .25em 0 0 rgba(255,255,255,0), .5em 0 0 rgba(255,255,255,0);}
+            40% { color: white; text-shadow: .25em 0 0 rgba(255,255,255,0), .5em 0 0 rgba(255,255,255,0);}
+            60% { text-shadow: .25em 0 0 white, .5em 0 0 rgba(255,255,255,0);}
+            80%, 100% { text-shadow: .25em 0 0 white, .5em 0 0 white;}
+        }
+
+    </style>
+</head>
+<body>
+    
+    <!-- Decorative background elements -->
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <div class="container">
+        <header class="header">
+            <h1>Enterprise Document Q&A</h1>
+            <p>Powered by Java, Spring Boot, LangChain4j & Gemini AI</p>
+        </header>
+        
+        <div class="panel">
+            <h3><span>1</span> Upload Document Base</h3>
+            <p>Initialize the Retrieval-Augmented Generation (RAG) vector store by uploading a corporate PDF document.</p>
+            
+            <div class="file-upload-wrapper">
+                <input type="file" id="pdfFile" class="file-upload-input" accept=".pdf">
+            </div>
+            <button class="btn-primary" onclick="uploadPdf()">Ingest Document</button>
+            <div id="upload-status" class="status"></div>
+        </div>
+
+        <div class="panel">
+            <h3><span>2</span> Query the AI</h3>
+            <p>Ask a natural language question. The AI will retrieve the most relevant semantic chunks from your document and generate a precise answer.</p>
+            
+            <div class="input-group">
+                <input type="text" id="question" placeholder="e.g., What is the primary focus of Future Tech Innovations?" onkeypress="handleKeyPress(event)">
+                <button class="btn-primary" onclick="askQuestion()">Generate Answer</button>
+            </div>
+            <div id="chat-response"></div>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.className = `status visible status-${type}`;
+            el.innerHTML = message;
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') {
+                askQuestion();
+            }
+        }
+
+        async function uploadPdf() {
+            const fileInput = document.getElementById('pdfFile');
+            
+            if (fileInput.files.length === 0) {
+                showStatus('upload-status', '⚠️ Please select a PDF file first.', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            showStatus('upload-status', '⏳ Chunking and generating vectors <span class="thinking-dots"></span>', 'warning');
+
+            try {
+                const response = await fetch('/api/v1/documents/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showStatus('upload-status', '✅ ' + (result.message || "Vector embeddings generated and stored successfully!"), 'success');
+                } else {
+                    showStatus('upload-status', '❌ Error: ' + (result.error || "Upload failed."), 'error');
+                }
+            } catch (error) {
+                showStatus('upload-status', '❌ Error connecting to server backend.', 'error');
+            }
+        }
+
+        async function askQuestion() {
+            const questionInput = document.getElementById('question');
+            const responseDiv = document.getElementById('chat-response');
+            
+            if (!questionInput.value.trim()) return;
+
+            responseDiv.style.display = "block";
+            responseDiv.innerHTML = 'Retrieving context and generating response <span class="thinking-dots"></span>';
+
+            try {
+                const response = await fetch('/api/v1/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: questionInput.value.trim() })
+                });
+                
+                if (!response.ok) {
+                    responseDiv.innerHTML = '<span style="color: var(--error)">❌ Backend Error: The AI service failed to respond. The API might be overloaded or returning an error.</span>';
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                // Format response line breaks nicely
+                let formattedAnswer = result.answer || "No answer received.";
+                formattedAnswer = formattedAnswer.replace(/\n/g, '<br>');
+                
+                responseDiv.innerHTML = formattedAnswer;
+            } catch (error) {
+                responseDiv.innerHTML = '<span style="color: var(--error)">❌ Network error communicating with the chat endpoint.</span>';
+            }
+        }
+    </script>
+</body>
+</html>
