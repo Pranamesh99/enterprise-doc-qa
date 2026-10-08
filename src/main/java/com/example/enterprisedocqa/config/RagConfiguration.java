@@ -7,6 +7,12 @@ import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
+import io.qdrant.client.QdrantClient;
+import io.qdrant.client.QdrantGrpcClient;
+import io.qdrant.client.grpc.Collections.Distance;
+import io.qdrant.client.grpc.Collections.VectorParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +37,11 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class RagConfiguration {
+
+    private static final Logger log = LoggerFactory.getLogger(RagConfiguration.class);
+
+    /** AllMiniLmL6V2 produces 384-dimensional vectors — must match Qdrant collection config. */
+    private static final int EMBEDDING_DIMENSION = 384;
 
     /**
      * Injected from application.yml → gemini.api-key
@@ -111,32 +122,62 @@ public class RagConfiguration {
     }
 
     // -----------------------------------------------------------------------
-    // BEAN 3: Vector Store — In-Memory Embedding Database
+    // BEAN 3: Vector Store — Qdrant Persistent Vector Database
     // -----------------------------------------------------------------------
     /**
-     * Configures the vector store: InMemoryEmbeddingStore.
+     * Configures the vector store: QdrantEmbeddingStore.
      *
      * What is a Vector Store?
      *   A vector store is a database optimized to store and search high-dimensional vectors.
      *   Instead of SQL queries (WHERE name = 'X'), it answers: "Which stored vectors are
      *   most similar to this query vector?"
      *
-     * InMemoryEmbeddingStore:
-     *  - Stores all document chunk vectors in RAM (no external DB like Qdrant or Pinecone needed).
-     *  - Perfect for demos, prototypes, and small-to-medium document sets.
-     *  - Data is LOST when the application restarts (not persistent).
+     * QdrantEmbeddingStore (replaces InMemoryEmbeddingStore):
+     *  - Connects to a running Qdrant instance via gRPC (port 6334).
+     *  - Vectors are stored on disk — PERSISTENT across Spring Boot restarts.
+     *  - Production-ready: supports millions of vectors, filtering, and sharding.
      *
-     * For production scale-out, this can be swapped with:
-     *  - Qdrant (Docker-based, persistent)
-     *  - Pinecone (cloud-managed)
-     *  - pgvector (PostgreSQL extension)
-     *  LangChain4j supports all of these with the same interface — just change this bean!
+     * Auto-Collection Creation:
+     *   Qdrant does NOT auto-create collections. This bean uses a QdrantClient to
+     *   check if the "documents" collection exists, and creates it (384-dim, cosine)
+     *   if it does not. This prevents "Collection not found" errors on fresh starts.
      */
     @Bean
     public EmbeddingStore<dev.langchain4j.data.segment.TextSegment> embeddingStore(
             @Value("${qdrant.host}") String host,
             @Value("${qdrant.port}") int port,
             @Value("${qdrant.collection-name}") String collectionName) {
+
+        // Step 1: Connect a low-level Qdrant gRPC client to auto-create the collection.
+        QdrantClient qdrantClient = new QdrantClient(
+                QdrantGrpcClient.newBuilder(host, port, false).build()
+        );
+
+        try {
+            // Check if the collection already exists
+            qdrantClient.getCollectionInfoAsync(collectionName).get();
+            log.info("Qdrant collection '{}' already exists — skipping creation.", collectionName);
+        } catch (Exception e) {
+            // Collection does not exist — create it with the correct dimensions and distance metric
+            log.info("Qdrant collection '{}' not found — creating with {} dimensions (cosine).",
+                    collectionName, EMBEDDING_DIMENSION);
+            try {
+                qdrantClient.createCollectionAsync(
+                        collectionName,
+                        VectorParams.newBuilder()
+                                .setSize(EMBEDDING_DIMENSION)   // Must match AllMiniLmL6V2 output (384)
+                                .setDistance(Distance.Cosine)   // Cosine similarity for semantic search
+                                .build()
+                ).get();
+                log.info("Qdrant collection '{}' created successfully.", collectionName);
+            } catch (Exception createEx) {
+                throw new RuntimeException("Failed to create Qdrant collection '" + collectionName + "'", createEx);
+            }
+        } finally {
+            try { qdrantClient.close(); } catch (Exception ignored) {}
+        }
+
+        // Step 2: Build and return the LangChain4j QdrantEmbeddingStore
         return QdrantEmbeddingStore.builder()
                 .host(host)
                 .port(port)

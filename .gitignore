@@ -24,8 +24,13 @@ logs/
 # Uncomment the line below if you move to environment-variable-based config:
 # application.yml
 
-# Qdrant local binaries and storage
+# Qdrant local binaries and Docker volume storage — never commit binary vector data
 qdrant
 qdrant.tar.gz
 storage/
+qdrant_storage/
 .qdrant-initialized
+
+# IDE / Editor specific files
+.vscode/
+*.code-workspace
