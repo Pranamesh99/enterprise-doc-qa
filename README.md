@@ -108,34 +108,35 @@ Open [http://localhost:8080](http://localhost:8080)
 
 ---
 
-## 📦 Qdrant — Persistent Vector Storage
+## 📦 Qdrant — Vector Database
 
-Unlike the previous `InMemoryEmbeddingStore`, **Qdrant persists all vectors to disk**. This means:
+This application uses **Qdrant** as its vector database — a high-performance, disk-backed store built for similarity search at scale.
 
-| Feature | Before (InMemory) | After (Qdrant) |
-|---|---|---|
-| Vectors survive restart | ❌ No | ✅ Yes |
-| Scalability | RAM limited | Disk-backed, production-ready |
-| Dashboard / inspection | ❌ | ✅ [http://localhost:6333/dashboard](http://localhost:6333/dashboard) |
-| Docker setup required | ❌ | ✅ via `docker-compose.yml` |
+| Feature | Detail |
+|---|---|
+| Storage | Disk-backed — vectors persist across restarts |
+| Scalability | Production-ready, supports millions of vectors |
+| Dashboard | [http://localhost:6333/dashboard](http://localhost:6333/dashboard) |
+| Setup | Via `docker-compose.yml` included in the project |
+| Auto-collection | Created automatically on first startup (384-dim, cosine) |
 
-The Qdrant collection (`documents`) is auto-created on first run with **cosine distance** and **384 dimensions** to match the AllMiniLmL6V2 embedding model.
+> The `documents` collection is auto-created on first run with **cosine distance** and **384 dimensions** to match the AllMiniLmL6V2 embedding model. No manual setup needed.
 
 ---
 
-## 🔧 RAG Tuning (Key Improvements)
+## 🔧 RAG Configuration & Tuning
 
-This system was iteratively improved to handle **multi-hop retrieval** — questions that require combining information from multiple sections of a document (e.g., Results + Discussion):
+The system is tuned to handle **multi-hop retrieval** — questions that require combining information from multiple sections of a document (e.g., Results + Discussion):
 
-| Parameter | Before | After | Reason |
-|---|---|---|---|
-| Chunk size | 1000 chars | 2500 chars | Captures more cross-section context |
-| Chunk overlap | 150 chars | 400 chars | Prevents context loss at section boundaries |
-| Top-K retrieval | 3 | 8 | Retrieves from multiple paper sections simultaneously |
-| Min similarity score | 0.6 | 0.4 | Doesn't filter out semantically weaker Discussion chunks |
-| Max output tokens | 1024 | 2048 | Allows Gemini to write complete synthesized answers |
-| System prompt | Generic | Multi-section synthesis instructions | Forces Gemini to combine Results + Discussion |
-| Vector store | InMemory (volatile) | **Qdrant (persistent)** | Vectors survive restarts |
+| Parameter | Value | Reason |
+|---|---|---|
+| Chunk size | 2500 chars | Captures more cross-section context |
+| Chunk overlap | 400 chars | Prevents context loss at section boundaries |
+| Top-K retrieval | 8 | Retrieves from multiple document sections simultaneously |
+| Min similarity score | 0.4 | Includes semantically related but indirectly-worded chunks |
+| Max output tokens | 2048 | Allows Gemini to write complete synthesized answers |
+| System prompt | Multi-section synthesis | Guides Gemini to combine Results + Discussion sections |
+| Vector store | Qdrant (disk-backed) | Persistent storage, survives application restarts |
 
 ---
 
