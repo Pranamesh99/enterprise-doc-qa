@@ -1,6 +1,6 @@
 # Enterprise Document Q&A System
 
-A full-stack **Retrieval-Augmented Generation (RAG)** system built with **Java, Spring Boot, LangChain4j, and Google Gemini AI** that allows users to upload PDF documents and ask natural language questions about their contents.
+A full-stack **Retrieval-Augmented Generation (RAG)** system built with **Java, Spring Boot, LangChain4j, and Google Gemini AI** that allows users to upload PDF documents and ask natural language questions about their contents. 
 
 
 ---
