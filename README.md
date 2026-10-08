@@ -2,7 +2,6 @@
 
 A full-stack **Retrieval-Augmented Generation (RAG)** system built with **Java, Spring Boot, LangChain4j, and Google Gemini AI** that allows users to upload PDF documents and ask natural language questions about their contents.
 
-> **v2.0** — Now powered by **Qdrant** as a persistent vector database. Vectors survive application restarts!
 
 ---
 
