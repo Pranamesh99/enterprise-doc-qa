@@ -4,7 +4,7 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import org.springframework.beans.factory.annotation.Value;
@@ -133,8 +133,15 @@ public class RagConfiguration {
      *  LangChain4j supports all of these with the same interface — just change this bean!
      */
     @Bean
-    public EmbeddingStore<dev.langchain4j.data.segment.TextSegment> embeddingStore() {
-        return new InMemoryEmbeddingStore<>();
+    public EmbeddingStore<dev.langchain4j.data.segment.TextSegment> embeddingStore(
+            @Value("${qdrant.host}") String host,
+            @Value("${qdrant.port}") int port,
+            @Value("${qdrant.collection-name}") String collectionName) {
+        return QdrantEmbeddingStore.builder()
+                .host(host)
+                .port(port)
+                .collectionName(collectionName)
+                .build();
     }
 
     // -----------------------------------------------------------------------

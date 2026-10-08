@@ -42,3 +42,11 @@ gemini:
   #   gemini-3.8-flash      → 503 / hanging (overloaded)
   #   gemini-3.5-flash-lite → ✅ Works! Fast, cost-effective, accurate answers
   model: gemini-3.5-flash-lite
+
+# ============================================================
+# Qdrant Vector Database Configuration
+# ============================================================
+qdrant:
+  host: localhost
+  port: 6334
+  collection-name: documents

@@ -23,3 +23,9 @@ logs/
 # Use environment variables or a secrets manager instead.
 # Uncomment the line below if you move to environment-variable-based config:
 # application.yml
+
+# Qdrant local binaries and storage
+qdrant
+qdrant.tar.gz
+storage/
+.qdrant-initialized

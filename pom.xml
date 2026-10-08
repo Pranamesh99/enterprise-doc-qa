@@ -53,6 +53,13 @@
             <version>${langchain4j.version}</version>
         </dependency>
 
+        <!-- Qdrant Vector Store -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-qdrant</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+
         <!-- Lombok for boilerplate -->
         <dependency>
             <groupId>org.projectlombok</groupId>
