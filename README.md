@@ -2,6 +2,10 @@
 
 A full-stack **Retrieval-Augmented Generation (RAG)** system built with **Java, Spring Boot, LangChain4j, and Google Gemini AI** that allows users to upload PDF documents and ask natural language questions about their contents.
 
+> **v2.0** — Now powered by **Qdrant** as a persistent vector database. Vectors survive application restarts!
+
+---
+
 ## 🏗️ Architecture
 
 ```
@@ -14,54 +18,111 @@ User uploads PDF
        ↓
   AllMiniLmL6V2EmbeddingModel (local, JVM) → Convert chunks to 384-dim vectors
        ↓
-  InMemoryEmbeddingStore → Store vectors in RAM
+  Qdrant Vector Database (persistent, port 6333) → Store vectors + metadata
 
 User asks a question
        ↓
 [RETRIEVAL + GENERATION PIPELINE]
-  AllMiniLmL6V2 → Convert question to vector
+  AllMiniLmL6V2 → Convert question to 384-dim vector
        ↓
-  EmbeddingStoreContentRetriever (Top-8, minScore=0.4) → Semantic similarity search
+  QdrantEmbeddingStore → Cosine similarity search (Top-8, minScore=0.4)
        ↓
   LangChain4j @AiService → Build prompt (SystemMessage + chunks + question)
        ↓
-  Google Gemini 3.5-flash-lite API → Synthesize answer across all sections
+  Google Gemini Flash API → Synthesize answer across all sections
        ↓
   JSON response to frontend
 ```
 
+---
+
 ## 🛠️ Technologies
 
-| Technology | Purpose |
-|---|---|
-| Java 17+ / Spring Boot 3 | Backend REST API |
-| LangChain4j 1.0.0-beta5 | AI orchestration framework |
-| Google Gemini API | Large Language Model (answer generation) |
-| AllMiniLmL6V2 (ONNX) | Local embedding model (no API cost) |
-| InMemoryEmbeddingStore | In-process vector database |
-| Apache PDFBox | PDF text extraction |
-| HTML/CSS/JS | Frontend UI (dark glassmorphism design) |
+| Technology | Version | Purpose |
+|---|---|---|
+| Java | 17+ | Backend language |
+| Spring Boot | 3.x | REST API framework |
+| LangChain4j | 1.0.0-beta5 | AI orchestration framework |
+| Google Gemini API | gemini-3.5-flash-lite | LLM for answer generation |
+| AllMiniLmL6V2 (ONNX) | bundled | Local embedding model (no API cost, 384-dim) |
+| **Qdrant** | **latest** | **Persistent vector database** |
+| Apache PDFBox | 3.x | PDF text extraction |
+| Docker / Docker Compose | any | Run Qdrant container |
+| HTML / CSS / JS | — | Frontend UI (dark glassmorphism design) |
+
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Java 17+
 - Maven 3.8+
-- Google AI Studio API Key ([get one free](https://aistudio.google.com/app/apikey))
+- Docker & Docker Compose (to run Qdrant)
+- Google AI Studio API Key → [get one free](https://aistudio.google.com/app/apikey)
 
-### Configuration
+---
+
+### Step 1 — Start Qdrant
+
+**Using Docker Compose (recommended):**
+```bash
+docker-compose up -d
+```
+This starts Qdrant with persistent storage in `./qdrant_storage/`.
+
+**Manually verify Qdrant is running:**
+```bash
+curl http://localhost:6333/healthz
+# Expected: {"title":"qdrant - vector search engine","version":"..."}
+```
+
+Qdrant dashboard is available at: [http://localhost:6333/dashboard](http://localhost:6333/dashboard)
+
+---
+
+### Step 2 — Configure API Key
+
 Edit `src/main/resources/application.yml`:
 ```yaml
 gemini:
-  api-key: YOUR_API_KEY_HERE
+  api-key: YOUR_GOOGLE_AI_STUDIO_API_KEY_HERE
   model: gemini-3.5-flash-lite
+
+qdrant:
+  host: localhost
+  port: 6334          # gRPC port
+  collection-name: documents
+  dimension: 384      # AllMiniLmL6V2 output dimension
 ```
 
-### Run
+> ⚠️ **Never commit your real API key.** Use environment variables or a secrets manager in production.
+
+---
+
+### Step 3 — Run the Application
+
 ```bash
 ./mvnw spring-boot:run
 ```
+
 Open [http://localhost:8080](http://localhost:8080)
+
+---
+
+## 📦 Qdrant — Persistent Vector Storage
+
+Unlike the previous `InMemoryEmbeddingStore`, **Qdrant persists all vectors to disk**. This means:
+
+| Feature | Before (InMemory) | After (Qdrant) |
+|---|---|---|
+| Vectors survive restart | ❌ No | ✅ Yes |
+| Scalability | RAM limited | Disk-backed, production-ready |
+| Dashboard / inspection | ❌ | ✅ [http://localhost:6333/dashboard](http://localhost:6333/dashboard) |
+| Docker setup required | ❌ | ✅ via `docker-compose.yml` |
+
+The Qdrant collection (`documents`) is auto-created on first run with **cosine distance** and **384 dimensions** to match the AllMiniLmL6V2 embedding model.
+
+---
 
 ## 🔧 RAG Tuning (Key Improvements)
 
@@ -75,25 +136,35 @@ This system was iteratively improved to handle **multi-hop retrieval** — quest
 | Min similarity score | 0.6 | 0.4 | Doesn't filter out semantically weaker Discussion chunks |
 | Max output tokens | 1024 | 2048 | Allows Gemini to write complete synthesized answers |
 | System prompt | Generic | Multi-section synthesis instructions | Forces Gemini to combine Results + Discussion |
+| Vector store | InMemory (volatile) | **Qdrant (persistent)** | Vectors survive restarts |
+
+---
 
 ## 📁 Project Structure
 
 ```
-src/main/java/com/example/enterprisedocqa/
-├── EnterpriseDocQaApplication.java   # Spring Boot entry point
-├── config/
-│   └── RagConfiguration.java         # LLM, Embeddings, VectorStore, Retriever beans
-├── controller/
-│   └── QaController.java             # REST endpoints: /upload and /chat
-└── service/
-    ├── DocumentService.java           # RAG ingestion pipeline (parse→chunk→embed→store)
-    └── DocumentAssistant.java         # LangChain4j @AiService (retrieval→generation)
-
-src/main/resources/
-├── application.yml                   # App configuration (API key, model, file size limits)
-└── static/
-    └── index.html                    # Frontend UI
+enterprise-doc-qa/
+├── docker-compose.yml                          # Start Qdrant with one command
+├── src/
+│   └── main/
+│       ├── java/com/example/enterprisedocqa/
+│       │   ├── EnterpriseDocQaApplication.java   # Spring Boot entry point
+│       │   ├── config/
+│       │   │   └── RagConfiguration.java         # LLM, Embeddings, Qdrant, Retriever beans
+│       │   ├── controller/
+│       │   │   └── QaController.java             # REST endpoints: /upload and /chat
+│       │   └── service/
+│       │       ├── DocumentService.java           # RAG ingestion: parse→chunk→embed→qdrant
+│       │       └── DocumentAssistant.java         # LangChain4j @AiService (retrieval→generation)
+│       └── resources/
+│           ├── application.yml                   # App config (API key, Qdrant, model, limits)
+│           └── static/
+│               └── index.html                    # Frontend UI
+├── pom.xml                                       # Dependencies incl. langchain4j-qdrant
+└── README.md
 ```
+
+---
 
 ## 🔌 REST API
 
@@ -114,3 +185,66 @@ Content-Type: application/json
 {"question": "What are the main findings of the paper?"}
 ```
 Response: `{"answer": "According to the Results section..."}`
+
+---
+
+## 🗂️ How RAG Works (Conceptually)
+
+1. **Ingest**: User uploads a PDF → text extracted → split into overlapping chunks → each chunk converted to a 384-dimensional vector by AllMiniLmL6V2 → stored in Qdrant.
+2. **Retrieve**: User asks a question → question converted to a 384-dim vector → Qdrant performs cosine similarity search → top-8 most relevant chunks returned.
+3. **Generate**: The retrieved chunks + the question are assembled into a prompt → sent to Gemini API → Gemini synthesizes a comprehensive answer → returned to the user.
+
+---
+
+## 🐳 Docker Compose Reference
+
+```yaml
+version: '3.8'
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"   # REST API + Dashboard
+      - "6334:6334"   # gRPC (used by LangChain4j)
+    volumes:
+      - ./qdrant_storage:/qdrant/storage   # Persistent storage
+```
+
+---
+
+## 📚 Key Dependencies (`pom.xml`)
+
+```xml
+<!-- LangChain4j core -->
+<dependency>
+  <groupId>dev.langchain4j</groupId>
+  <artifactId>langchain4j-spring-boot-starter</artifactId>
+</dependency>
+
+<!-- Google Gemini -->
+<dependency>
+  <groupId>dev.langchain4j</groupId>
+  <artifactId>langchain4j-google-ai-gemini-spring-boot-starter</artifactId>
+</dependency>
+
+<!-- Local embeddings (AllMiniLmL6V2, runs in JVM) -->
+<dependency>
+  <groupId>dev.langchain4j</groupId>
+  <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
+</dependency>
+
+<!-- Qdrant vector store -->
+<dependency>
+  <groupId>dev.langchain4j</groupId>
+  <artifactId>langchain4j-qdrant</artifactId>
+</dependency>
+```
+
+---
+
+## 🧑‍💻 Built With
+
+- [LangChain4j](https://github.com/langchain4j/langchain4j) — Java AI framework
+- [Qdrant](https://qdrant.tech/) — High-performance vector database
+- [Google AI Studio](https://aistudio.google.com/) — Gemini API
+- [Spring Boot](https://spring.io/projects/spring-boot) — Backend framework
