@@ -28,7 +28,7 @@ import dev.langchain4j.service.spring.AiService;
  *        ↓
  *   EmbeddingModel (local) converts question → 384-dim vector
  *        ↓
- *   ContentRetriever searches InMemoryEmbeddingStore for top-8 similar chunks
+ *   ContentRetriever searches QdrantEmbeddingStore for top-8 similar chunks
  *        ↓
  *   LangChain4j builds prompt:
  *       ┌─ @SystemMessage (instructions to Gemini)

@@ -50,7 +50,7 @@ import java.io.InputStream;
  *  STEP 3 — EMBED & STORE
  *    Each chunk is converted to a 384-dimensional embedding vector by the local
  *    AllMiniLmL6V2 model. The vector + original text are then stored together
- *    in the InMemoryEmbeddingStore (our vector database).
+ *    in the QdrantEmbeddingStore (our persistent vector database, running in Docker).
  *
  * @Service marks this as a Spring-managed service component.
  */
@@ -137,7 +137,7 @@ public class DocumentService {
                     .embeddingModel(embeddingModel)
 
                     // The embedding store saves each (vector, text chunk) pair.
-                    // This is the InMemoryEmbeddingStore (our in-RAM vector database).
+                    // This is the QdrantEmbeddingStore (our persistent vector database via Docker/gRPC).
                     .embeddingStore(embeddingStore)
 
                     .build();

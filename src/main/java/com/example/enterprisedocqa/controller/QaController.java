@@ -88,7 +88,7 @@ public class QaController {
         }
 
         // Delegate to DocumentService which runs the full RAG ingestion pipeline:
-        // PDF → ApachePdfBoxDocumentParser → DocumentSplitters.recursive(2500,400) → AllMiniLmL6V2 → InMemoryEmbeddingStore
+        // PDF → ApachePdfBoxDocumentParser → DocumentSplitters.recursive(2500,400) → AllMiniLmL6V2 → QdrantEmbeddingStore
         documentService.ingestPdf(file);
 
         // Return a simple JSON success message — the frontend shows this to the user
@@ -106,7 +106,7 @@ public class QaController {
      *
      * The pipeline triggered by documentAssistant.answer(question):
      *  1. Convert question to embedding vector (local AllMiniLmL6V2)
-     *  2. Search InMemoryEmbeddingStore for top-8 most similar document chunks (minScore≥0.4)
+     *  2. Search QdrantEmbeddingStore for top-8 most similar document chunks (minScore≥0.4)
      *  3. Build the LLM prompt: @SystemMessage + retrieved chunks + user question
      *  4. Send prompt to Google Gemini API
      *  5. Return Gemini's synthesized answer as a String

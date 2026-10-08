@@ -15,7 +15,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *  - LangChain4j            : Java AI orchestration library (like LangChain in Python)
  *  - Google Gemini API      : Large Language Model (LLM) for generating answers
  *  - AllMiniLmL6V2          : Local embedding model running inside the JVM (no API call)
- *  - InMemoryEmbeddingStore : In-process vector store (no external DB needed)
+ *  - QdrantEmbeddingStore   : Persistent vector database (runs in Docker, survives restarts)
  *  - Apache PDFBox          : PDF text extraction library
  *
  * Architecture Pattern: RAG (Retrieval-Augmented Generation)

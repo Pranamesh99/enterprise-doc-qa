@@ -132,7 +132,7 @@ public class RagConfiguration {
      *   Instead of SQL queries (WHERE name = 'X'), it answers: "Which stored vectors are
      *   most similar to this query vector?"
      *
-     * QdrantEmbeddingStore (replaces InMemoryEmbeddingStore):
+     * QdrantEmbeddingStore:
      *  - Connects to a running Qdrant instance via gRPC (port 6334).
      *  - Vectors are stored on disk — PERSISTENT across Spring Boot restarts.
      *  - Production-ready: supports millions of vectors, filtering, and sharding.
